@@ -2,6 +2,9 @@
 // TODO 1: PREPARING ENVIRONMENT: 1) session 2) functions
 session_start();
 
+
+$aConfig = require_once 'config.php';
+
 // TODO 2: ROUTING
 if (!empty($_SESSION['auth'])) {
     header('Location: /admin.php');
@@ -18,32 +21,62 @@ if (!empty($_POST['email']) && !empty($_POST['password'])) {
 
     // 3. Check that user has already existed
     $isAlreadyRegistered = false;
-    $fileUsers = 'users.csv';
+    $db = mysqli_connect(
+        $aConfig['host'],
+        $aConfig['user'],
+        $aConfig['pass'],
+        $aConfig['name']
+    );
+    $query = "SELECT * FROM users where email = '{$_POST['email']}'" ;
+    $dbResponse = mysqli_query($db, $query);
+    $aUser = mysqli_fetch_assoc($dbResponse);
+    echo($query);
+    mysqli_close($db);
 
-    if (file_exists($fileUsers)) {
-        $sUsers = file_get_contents($fileUsers);
-        $aJsonsUsers = explode("\n", $sUsers);
-
-        foreach ($aJsonsUsers as $jsonUser) {
-            $aUser = json_decode($jsonUser, true);
-            if (!$aUser) break;
-
-            foreach ($aUser as $email => $password) {
-                if (($email == $_POST['email']) && ($password == $_POST['password'])) {
-                    $isAlreadyRegistered = true;
-
-                    $infoMessage = "Такой пользователь уже существует! Перейдите на страницу входа. ";
-                    $infoMessage .= "<a href='/login.php'>Страница входа</a>";
-                }
-            }
-        }
+    if (!empty($aUser)) {
+        $isAlreadyRegistered = true;
+        $infoMessage = "Такой пользователь уже существует! Перейдите на страницу входа. ";
+        $infoMessage .= "<a href='/login.php'>Страница входа</a>";
     }
+//    $fileUsers = 'users.csv';
+//    if (file_exists($fileUsers)) {
+//        $sUsers = file_get_contents($fileUsers);
+//        $aJsonsUsers = explode("\n", $sUsers);
+//
+//        foreach ($aJsonsUsers as $jsonUser) {
+//            $aUser = json_decode($jsonUser, true);
+//            if (!$aUser) break;
+//
+//            foreach ($aUser as $email => $password) {
+//                if (($email == $_POST['email']) && ($password == $_POST['password'])) {
+//                    $isAlreadyRegistered = true;
+//
+//                    $infoMessage = "Такой пользователь уже существует! Перейдите на страницу входа. ";
+//                    $infoMessage .= "<a href='/login.php'>Страница входа</a>";
+//                }
+//            }
+//        }
+//    }
 
     if (!$isAlreadyRegistered) {
         // 4. Create new user
-        $aNewUser = [$_POST['email'] => $_POST['password']];
-        file_put_contents("users.csv", json_encode($aNewUser) . "\n", FILE_APPEND);
-
+//        $aNewUser = [$_POST['email'] => $_POST['password']];
+//        file_put_contents("users.csv", json_encode($aNewUser) . "\n", FILE_APPEND);
+//
+//        header('Location: /login.php');
+//        die;
+        $db = mysqli_connect(
+            $aConfig['host'],
+            $aConfig['user'],
+            $aConfig['pass'],
+            $aConfig['name']
+        );
+        $query = "INSERT INTO users (email, password) VALUES (
+            '". $_POST['email']."',
+            '". $_POST['password']."'
+        )";
+        mysqli_query($db, $query);
+        mysqli_close($db);
         header('Location: /login.php');
         die;
     }

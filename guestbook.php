@@ -1,11 +1,28 @@
 <?php
 session_start();
 
-if (!empty($_POST)){
-    $jsonString = json_encode($_POST);
-    $fileStream = fopen ('comments.csv','a');
-    fwrite($fileStream , $jsonString ."\n");
-    fclose($fileStream);
+$aConfig = require_once 'config.php';
+//if (!empty($_POST)){
+//    $jsonString = json_encode($_POST);
+//    $fileStream = fopen ('comments.csv','a');
+//    fwrite($fileStream , $jsonString ."\n");
+//    fclose($fileStream);
+//}
+if (isset($_POST)){
+    $db = mysqli_connect(
+        $aConfig['host'],
+        $aConfig['user'],
+        $aConfig['pass'],
+        $aConfig['name']
+    );
+    $query = "INSERT INTO comments (email, name, comment) VALUES (
+    '". $_POST['email']."',
+    '". $_POST['name']."',
+    '". $_POST['comment']."'
+    )";
+
+    mysqli_query($db, $query);
+    mysqli_close($db);
 }
 ?>
 
@@ -59,19 +76,22 @@ if (!empty($_POST)){
             <div class="row">
                 <div class="col-sm-6">
                     <?php
-                    if ( file_exists ('comments.csv')){
-                        $fileStream = fopen('comments.csv', "r");
-                        while(!feof($fileStream)){
-                            $jsonString = fgets ($fileStream);
-                            $array = json_decode ($jsonString, true);
+                    $db = mysqli_connect(
+                        $aConfig['host'],
+                        $aConfig['user'],
+                        $aConfig['pass'],
+                        $aConfig['name']
+                    );
 
-                            if (empty ($array)) break ;
+                    $query = 'SELECT * FROM comments';
+                    $dbResponse = mysqli_query($db, $query);
+                    $aComments = mysqli_fetch_all($dbResponse, MYSQLI_ASSOC);
+                    mysqli_close($db);
 
-                            echo '<b>' . $array ['email'] . '<br>' . '</b>';
-                            echo '<b>' . $array ['name'] . '<br>' . '</b>';
-                            echo $array ['comment'] . '<br><hr>';
-                        }
-                        fclose ($fileStream );
+                    foreach ($aComments as $comment){
+                            echo '<b>' . $comment ['email'] . '<br>' . '</b>';
+                            echo '<b>' . $comment ['name'] . '<br>' . '</b>';
+                            echo $comment ['comment'] . '<br><hr>';
                     }
                     ?>
                 </div>
