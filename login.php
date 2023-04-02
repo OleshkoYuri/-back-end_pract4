@@ -2,6 +2,9 @@
 // TODO 1: PREPARING ENVIRONMENT: 1) session 2) functions
 session_start();
 
+
+$aConfig = require_once 'config.php';
+
 // TODO 2: ROUTING
 if (!empty($_SESSION['auth'])) {
     header('Location: /admin.php');
@@ -16,27 +19,24 @@ $infoMessage = '';
 // 2. handle form data
 if (!empty($_POST['email']) && !empty($_POST['password'])) {
 
-    // 3. Check that user has already existed
-    $sUsers = file_get_contents("users.csv");
-    $aJsonsUsers = explode("\n", $sUsers);
-
     $isAlreadyRegistered = false;
 
-    foreach ($aJsonsUsers as $jsonUser) {
-        $aUser = json_decode($jsonUser, true);
-        if (!$aUser) break;
+    $db = mysqli_connect(
+        $aConfig['host'],
+        $aConfig['user'],
+        $aConfig['pass'],
+        $aConfig['name']
+    );
+    $query = "SELECT * FROM users where email = '{$_POST['email']}' and password = '{$_POST['password']}'" ;
+    $dbResponse = mysqli_query($db, $query);
+    $aUser = mysqli_fetch_assoc($dbResponse);
+    echo($query);
+    mysqli_close($db);
+    if (!empty($aUser)) {
+        $isAlreadyRegistered = true;
+        $_SESSION['auth'] = true;
 
-        foreach ($aUser as $email => $password) {
-            if (($email == $_POST['email']) && ($password == $_POST['password'])) {
-                $isAlreadyRegistered = true;
-
-                $_SESSION['auth'] = true;
-                // $_SESSION['email'] = $_POST['email'];
-
-                header("Location: admin.php");
-                die;
-            }
-        }
+        header('Location: /admin.php');
     }
 
     if (!$isAlreadyRegistered) {
